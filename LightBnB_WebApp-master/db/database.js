@@ -83,7 +83,7 @@ const getUserWithId = function(id) {
 //   return Promise.resolve(user);
 // };
 const addUser = function(user) {
-  const queryString = `INSERT INTO users(name, email, password) VALUES($1,$2,'$2a$10$FB/BOAVhpuLvpOREQVmvmezD4ED/.JBIDRh70tGevYzYzQgFId2u.') RETURNING *`;
+  const queryString = `INSERT INTO users(name, email, password) VALUES($1,$2,   '$2a$10$FB/BOAVhpuLvpOREQVmvmezD4ED/.JBIDRh70tGevYzYzQgFId2u.') RETURNING *`;
   return pool
     .query(queryString,[user.name, user.email])
     .then((result) => {
@@ -101,8 +101,25 @@ const addUser = function(user) {
  * @param {string} guest_id The id of the user.
  * @return {Promise<[{}]>} A promise to the reservations.
  */
-const getAllReservations = function (guest_id, limit = 10) {
-  return getAllProperties(null, 2);
+const getAllReservations = function(guestId, limit = 10) {
+  // return getAllProperties(null, 2);
+  const queryString = `SELECT reservations.*, properties.*
+                      FROM reservations
+                      JOIN properties ON properties.id = property_id
+                      JOIN property_reviews ON reservations.id = reservation_id
+                      WHERE reservations.guest_id = $1
+                      GROUP BY properties.id,reservations.id
+                      ORDER BY reservations.start_date
+                      LIMIT $2`;
+  return pool
+    .query(queryString,[guestId, limit])
+    .then((result) => {
+      return result.rows;
+    })
+    .catch((err) => {
+      console.log(err);
+      return err.message;
+    });
 };
 
 /// Properties
